@@ -11,7 +11,22 @@ namespace Task_2
     class Program
     {
         private static List<int> list = new List<int>();
-        private static ThreadSafeList<object> safeList;
+        private static ThreadSafeList<int> safeList = new ThreadSafeList<int>();
+        private static readonly object Marker = new object();
+
+        static void FindSafePrimes(int from, int to)
+        {
+            for (var i = from; i < to; i++)
+            {
+                if (IsPrime(i))
+                {
+                    lock (Marker)
+                    {
+                        safeList.SafeAdd(i);
+                    }
+                }
+            }
+        }
 
         static void FindPrimes(int from, int to)
         {
@@ -43,23 +58,32 @@ namespace Task_2
             FindPrimes(range.Key, range.Value);
         }
 
+        static void PrintPrimesSafe(object obj)
+        {
+            var range = (KeyValuePair<int, int>)obj;
+            FindSafePrimes(range.Key, range.Value);
+        }
+
         static void Main(string[] args)
         {
             var pair = new List<KeyValuePair<int, int>>();
-            pair.Add(new KeyValuePair<int, int>(1, 10));
-            pair.Add(new KeyValuePair<int, int>(1, 10));
-            pair.Add(new KeyValuePair<int, int>(1, 10));
-            var t1 = new Thread(PrintPrimes);
+            pair.Add(new KeyValuePair<int, int>(1, 1000));
+            pair.Add(new KeyValuePair<int, int>(1, 1000));
+            pair.Add(new KeyValuePair<int, int>(1, 1000));
+            var t1 = new Thread(PrintPrimesSafe);
             t1.Start(pair[0]);
-            var t2 = new Thread(PrintPrimes);
+            var t2 = new Thread(PrintPrimesSafe);
             t2.Start(pair[1]);
-            var t3 = new Thread(PrintPrimes);
+            var t3 = new Thread(PrintPrimesSafe);
             t3.Start(pair[2]);
             t1.Join();
             t2.Join();
             t3.Join();
-            list.Distinct().ToList().ForEach(x => Console.Write($"{x} "));
-            Console.WriteLine();
+            Console.WriteLine(safeList.Count);
+            //Console.WriteLine(list.Count);
+            //list.ForEach(x => Console.Write($"{x} "));
+            //Console.WriteLine(list.Count);
+            //Console.WriteLine(safeList.Count);
             /*var pair = new List<KeyValuePair<int, int>>();
             pair.Add(new KeyValuePair<int, int>(1, 80_000));
             pair.Add(new KeyValuePair<int, int>(1, 80_000));
