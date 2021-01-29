@@ -1,113 +1,91 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Linq;
 using System.Text.Json;
 using System.IO;
 using System.Threading;
-
+using System.Collections;
+using System.Diagnostics;
 
 namespace Task_2
 {
     class Program
     {
-        private static List<int> list = new List<int>();
-        private static ThreadSafeList<int> safeList = new ThreadSafeList<int>();
-        private static readonly object Marker = new object();
+        private static ThreadSafeList<int> _safeList = new ThreadSafeList<int>();
+        private static bool _success = true;
+        private static string _error = null;
+        private static string _duration = "";
 
-        static void FindSafePrimes(int from, int to)
+        private static void FindPrimesInRange(object obj)
         {
-            for (var i = from; i < to; i++)
+            var primes = new List<int>();
+            var stopWatch = new Stopwatch();
+            var range = (Settings)obj;
+            var from = (int)range.PrimesFrom;
+            var to = (int)range.PrimesTo;
+            try
             {
-                if (IsPrime(i))
-                {
-                    lock (Marker)
-                    {
-                        safeList.SafeAdd(i);
-                    }
-                }
+                var numbers = Enumerable.Range(from, to - from);
+                stopWatch.Start();
+                primes = numbers.Where(x => x >= 2 && Enumerable.Range(2, (int)Math.Sqrt(x))
+                                                              .All(n => x % n != 0 || x == 2))
+                                                              .ToList();
             }
+            catch (Exception) { }
+            AddToSafe(primes);
         }
 
-        static void FindPrimes(int from, int to)
+        private static void AddToSafe(object list)
         {
-            for (var i = from; i < to; i++)
+            var primes = (List<int>)list;
+            primes.ForEach(x => _safeList.Add(x));
+        }
+
+
+        private static void FindPrimes()
+        {
+            var json = File.ReadAllText("settings.json");
+            var settings = JsonSerializer.Deserialize<List<Settings>>(json);
+            var threads = new List<Thread>();
+            foreach (var i in settings)
             {
-                if (IsPrime(i))
-                {
-                    list.Add(i);
-                }
+                threads.Add(new Thread(FindPrimesInRange));
+                threads.Last().Start(i);
+                //threads.Last().Join();
             }
+            
+            //threads.ForEach(t => t.Join());
+            Console.WriteLine(_safeList.Count);
         }
 
-        private static bool IsPrime(int n)
+        static void SaveResult()
         {
-            if (n <= 1)
-                return false;
-
-            // Check from 2 to n-1
-            for (var i = 2; i < n; i++)
-            {
-                if (n % i == 0) return false;
-            }
-            return true;
-        }
-
-        static void PrintPrimes(object obj)
-        {
-            var range = (KeyValuePair<int, int>)obj;
-            FindPrimes(range.Key, range.Value);
-        }
-
-        static void PrintPrimesSafe(object obj)
-        {
-            var range = (KeyValuePair<int, int>)obj;
-            FindSafePrimes(range.Key, range.Value);
+            var primes = _safeList.GetDistinct().ToArray();
+            var result = new Result(_success, _error, _duration, primes);
+            var json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText("result.json", json);
         }
 
         static void Main(string[] args)
         {
-            var pair = new List<KeyValuePair<int, int>>();
-            pair.Add(new KeyValuePair<int, int>(1, 1000));
-            pair.Add(new KeyValuePair<int, int>(1, 1000));
-            pair.Add(new KeyValuePair<int, int>(1, 1000));
-            var t1 = new Thread(PrintPrimesSafe);
-            t1.Start(pair[0]);
-            var t2 = new Thread(PrintPrimesSafe);
-            t2.Start(pair[1]);
-            var t3 = new Thread(PrintPrimesSafe);
-            t3.Start(pair[2]);
-            t1.Join();
-            t2.Join();
-            t3.Join();
-            Console.WriteLine(safeList.Count);
-            //Console.WriteLine(list.Count);
-            //list.ForEach(x => Console.Write($"{x} "));
-            //Console.WriteLine(list.Count);
-            //Console.WriteLine(safeList.Count);
-            /*var pair = new List<KeyValuePair<int, int>>();
-            pair.Add(new KeyValuePair<int, int>(1, 80_000));
-            pair.Add(new KeyValuePair<int, int>(1, 80_000));
-            pair.Add(new KeyValuePair<int, int>(1, 80_000));
-            *//*var t1 = new Thread(PrintPrimes);
-            t1.Start(pair[0]);
-            var t2 = new Thread(PrintPrimes);
-            t2.Start(pair[1]);
-            var t3 = new Thread(PrintPrimes);
-            t3.Start(pair[2]);
-            t1.Join();
-            t2.Join();
-            t3.Join();*//*
-            for (int i = 0; i < 3; i++)
+            var stopWatch = new Stopwatch();
+            try
             {
-                var thread = new Thread(PrintPrimes)
-                {
-                    Name = $"T{i}",
-                    IsBackground = false
-                };
-                thread.Start(pair[i]);
-                //thread.Join();
+                stopWatch.Start();
+                FindPrimes();
             }
-            Console.WriteLine("pivet");*/
+            catch (Exception ex)
+            {
+                _error = ex.Message;
+                _success = false;
+            }
+            finally
+            {
+                stopWatch.Stop();
+                _duration = stopWatch.Elapsed.ToString();
+            }
+            SaveResult();
         }
     }
 }

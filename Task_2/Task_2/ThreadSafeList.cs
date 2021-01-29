@@ -25,6 +25,7 @@ namespace Task_2
 
         public List<T> GetDistinct()
         {
+            Sort();
             return this.Distinct().ToList();
         }
     }

@@ -28,28 +28,41 @@ namespace Task_1
 
         static void SetRange()
         {
-            while (true)
-            {
+            //while (true)
+            //{
                 Console.Write("Enter minimum value\n-> ");
                 _min = GetValue();
                 Console.Write("Enter maximum value\n-> ");
                 _max = GetValue();
-                if (_max > _min) break;
-                Console.WriteLine("Maximum value must be more than minimum value. Try again");
-            }
+                //if (_max > _min) break;
+                //Console.WriteLine("Maximum value must be more than minimum value. Try again");
+            //}
         }
 
         static void FindWithLINQ()
         {
-            var range = Enumerable.Range(_min, _max - _min);
+            var primes = new List<int>();
             var stopWatch = new Stopwatch();
-            stopWatch.Start();
-            var primes = range.Where(x => x >= 2 && Enumerable.Range(2, (int)Math.Sqrt(x))
-                                                              .All(n => x % n != 0 || x == 2)).ToList();
-            stopWatch.Stop();
-            Console.WriteLine("------------------------");
-            Console.WriteLine($"Count: {primes.Count}\nTime: {stopWatch.Elapsed}");
-            Console.WriteLine("------------------------");
+            try
+            {
+                var range = Enumerable.Range(_min, _max - _min);
+                stopWatch.Start();
+                primes = range.Where(x => x >= 2 && Enumerable.Range(2, (int)Math.Sqrt(x))
+                                                              .All(n => x % n != 0 || x == 2))
+                                                              .ToList();
+            }
+            catch (Exception)
+            {
+                
+            }
+            finally
+            {
+                stopWatch.Stop();
+                Console.WriteLine("------------------------");
+                Console.WriteLine($"Count: {primes.Count}\nTime: {stopWatch.Elapsed}");
+                Console.WriteLine("------------------------");
+            }
+            
         }
 
         static void FindWithPLINQ()
