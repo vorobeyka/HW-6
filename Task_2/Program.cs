@@ -1,91 +1,90 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Linq;
 using System.Text.Json;
 using System.IO;
 using System.Threading;
-using System.Collections;
 using System.Diagnostics;
 
 namespace Task_2
 {
     class Program
     {
-        private static ThreadSafeList<int> _safeList = new ThreadSafeList<int>();
+        private static readonly ThreadSafeHashSet<int> _safeHashSet = new ThreadSafeHashSet<int>();
+        private static readonly Stopwatch _stopwatch = new Stopwatch();
         private static bool _success = true;
         private static string _error = null;
         private static string _duration = "";
 
         private static void FindPrimesInRange(object obj)
         {
-            var primes = new List<int>();
             var stopWatch = new Stopwatch();
-            var range = (Settings)obj;
-            var from = (int)range.PrimesFrom;
-            var to = (int)range.PrimesTo;
+            var from =((Settings)obj).PrimesFrom;
+            var to = ((Settings)obj).PrimesTo;
             try
             {
                 var numbers = Enumerable.Range(from, to - from);
                 stopWatch.Start();
-                primes = numbers.Where(x => x >= 2 && Enumerable.Range(2, (int)Math.Sqrt(x))
-                                                              .All(n => x % n != 0 || x == 2))
-                                                              .ToList();
+                var primes = numbers.Where(x => x >= 2 && Enumerable.Range(2, (int)Math.Sqrt(x))
+                                                              .All(n => x % n != 0 || x == 2));
+                foreach (var i in primes)
+                {
+                    _safeHashSet.SafeAdd(i);
+                }
             }
             catch (Exception) { }
-            AddToSafe(primes);
         }
-
-        private static void AddToSafe(object list)
-        {
-            var primes = (List<int>)list;
-            primes.ForEach(x => _safeList.Add(x));
-        }
-
 
         private static void FindPrimes()
         {
-            var json = File.ReadAllText("settings.json");
+            var json = "";
+            try
+            {
+                json = File.ReadAllText("settings.json");
+            }
+            catch (Exception)
+            {
+                throw new Exception("settings.json are missing or corrupted");
+            }
             var settings = JsonSerializer.Deserialize<List<Settings>>(json);
             var threads = new List<Thread>();
+            _stopwatch.Start();
             foreach (var i in settings)
             {
                 threads.Add(new Thread(FindPrimesInRange));
                 threads.Last().Start(i);
-                //threads.Last().Join();
             }
-            
-            //threads.ForEach(t => t.Join());
-            Console.WriteLine(_safeList.Count);
+            threads.ForEach(t => t.Join());
+            _stopwatch.Stop();
         }
 
         static void SaveResult()
         {
-            var primes = _safeList.GetDistinct().ToArray();
+            var primes = _safeHashSet.AsSortedArray();
             var result = new Result(_success, _error, _duration, primes);
             var json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText("result.json", json);
         }
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            var stopWatch = new Stopwatch();
+            var returnValue = 0;
             try
             {
-                stopWatch.Start();
                 FindPrimes();
             }
             catch (Exception ex)
             {
                 _error = ex.Message;
                 _success = false;
+                returnValue = -1;
             }
             finally
             {
-                stopWatch.Stop();
-                _duration = stopWatch.Elapsed.ToString();
+                _duration = _stopwatch.Elapsed.ToString();
+                SaveResult();
             }
-            SaveResult();
+            return returnValue;
         }
     }
 }

@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Diagnostics;
 
 namespace Task_1
@@ -28,15 +25,10 @@ namespace Task_1
 
         static void SetRange()
         {
-            //while (true)
-            //{
-                Console.Write("Enter minimum value\n-> ");
-                _min = GetValue();
-                Console.Write("Enter maximum value\n-> ");
-                _max = GetValue();
-                //if (_max > _min) break;
-                //Console.WriteLine("Maximum value must be more than minimum value. Try again");
-            //}
+            Console.Write("Enter minimum value\n-> ");
+            _min = GetValue();
+            Console.Write("Enter maximum value\n-> ");
+            _max = GetValue();
         }
 
         static void FindWithLINQ()
@@ -51,10 +43,7 @@ namespace Task_1
                                                               .All(n => x % n != 0 || x == 2))
                                                               .ToList();
             }
-            catch (Exception)
-            {
-                
-            }
+            catch (Exception) { }
             finally
             {
                 stopWatch.Stop();
@@ -62,7 +51,6 @@ namespace Task_1
                 Console.WriteLine($"Count: {primes.Count}\nTime: {stopWatch.Elapsed}");
                 Console.WriteLine("------------------------");
             }
-            
         }
 
         static void FindWithPLINQ()
@@ -97,7 +85,6 @@ namespace Task_1
                     default: Console.WriteLine("Invalid menu number. Try again");
                         break;
                 }
-
             }
         }
 
