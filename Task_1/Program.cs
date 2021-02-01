@@ -7,10 +7,10 @@ namespace Task_1
 {
     class Program
     {
-        static private int _min;
-        static private int _max;
+        private static int _min;
+        private static int _max;
 
-        static int GetValue()
+        private static int GetValue()
         {
             try
             {
@@ -23,7 +23,7 @@ namespace Task_1
             }
         }
 
-        static void SetRange()
+        private static void SetRange()
         {
             Console.Write("Enter minimum value\n-> ");
             _min = GetValue();
@@ -31,7 +31,7 @@ namespace Task_1
             _max = GetValue();
         }
 
-        static void FindWithLINQ()
+        private static void FindWithLINQ()
         {
             var primes = new List<int>();
             var stopWatch = new Stopwatch();
@@ -53,7 +53,7 @@ namespace Task_1
             }
         }
 
-        static void FindWithPLINQ()
+        private static void FindWithPLINQ()
         {
             var range = Enumerable.Range(_min, _max - _min).AsParallel();
             var stopWatch = new Stopwatch();
@@ -66,7 +66,7 @@ namespace Task_1
             Console.WriteLine("------------------------");
         }
 
-        static void Menu()
+        private static void Menu()
         {
             while (true)
             {

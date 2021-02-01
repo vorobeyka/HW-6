@@ -32,7 +32,7 @@ namespace Task_2
                     _safeHashSet.SafeAdd(i);
                 }
             }
-            catch (Exception) { }
+            catch (ArgumentException) { }
         }
 
         private static void FindPrimes()
@@ -58,7 +58,7 @@ namespace Task_2
             _stopwatch.Stop();
         }
 
-        static void SaveResult()
+        private static void SaveResult()
         {
             var primes = _safeHashSet.AsSortedArray();
             var result = new Result(_success, _error, _duration, primes);

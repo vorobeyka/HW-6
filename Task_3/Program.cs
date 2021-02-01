@@ -9,18 +9,20 @@ namespace Task_3
 {
     class Program
     {
-        static ConcurrentQueue<KeyValuePair<string, string>> concurrentQueue;
-        private static CountdownEvent Waiter;
+        private static ConcurrentQueue<KeyValuePair<string, string>> concurrentQueue;
+        private static CountdownEvent waiter;
         private static int threadsCount;
         private static int successfullLoginCount = 0;
         private static int failedLoginCount = 0;
 
-        static int GetThreadsCount()
+        private static int GetThreadsCount()
         {
             Console.Write("Enter threads count -> ");
             try
             {
-                return int.Parse(Console.ReadLine());
+                var result = int.Parse(Console.ReadLine());
+                if (result <= 0) throw new ArgumentOutOfRangeException();
+                return result;
             }
             catch (Exception)
             {
@@ -29,7 +31,7 @@ namespace Task_3
             }
         }
 
-        static void AddToQueue(string[] pair)
+        private static void AddToQueue(string[] pair)
         {
             concurrentQueue.Enqueue(new KeyValuePair<string, string>(pair[0], pair[1]));
         }
@@ -46,26 +48,26 @@ namespace Task_3
             {
                 Interlocked.Increment(ref successfullLoginCount);
             }
-            Waiter.Signal();
+            waiter.Signal();
         }
 
-        static void ThreadsWork()
+        private static void ThreadsWork()
         {
             while (!concurrentQueue.IsEmpty)
             {
                 if (concurrentQueue.Count > threadsCount)
                 {
-                    Waiter = new CountdownEvent(threadsCount);
+                    waiter = new CountdownEvent(threadsCount);
                 }
                 else
                 {
-                    Waiter = new CountdownEvent(concurrentQueue.Count);
+                    waiter = new CountdownEvent(concurrentQueue.Count);
                 }
                 for (int i = 0; i < threadsCount && !concurrentQueue.IsEmpty; i++)
                 {
                     ThreadPool.QueueUserWorkItem(TryLogin, new object());
                 }
-                Waiter.Wait();
+                waiter.Wait();
             }
         }
 
